@@ -13,7 +13,7 @@ def add_template_repository_to_source_path
     at_exit { FileUtils.remove_entry(tempdir) }
     git clone: [
       "--quiet",
-      "https://github.com/excid3/jumpstart.git",
+      "https://github.com/huhn511/jumpstart.git",
       tempdir
     ].map(&:shellescape).join(" ")
 
@@ -32,7 +32,7 @@ def add_gems
   gem 'devise', '~> 4.4', '>= 4.4.3'
   gem 'devise-bootstrapped', github: 'excid3/devise-bootstrapped', branch: 'bootstrap4'
   gem 'devise_masquerade', '~> 0.6.2'
-  gem 'font-awesome-sass', '~> 5.5', '>= 5.5.0.1'  
+  gem 'font-awesome-sass', '~> 5.5', '>= 5.5.0.1'
   gem 'foreman', '~> 0.84.0'
   gem 'friendly_id', '~> 5.2', '>= 5.2.4'
   gem 'gravatar_image_tag', github: 'mdeering/gravatar_image_tag'
@@ -47,6 +47,19 @@ def add_gems
   gem 'sitemap_generator', '~> 6.0', '>= 6.0.1'
   gem 'webpacker', '~> 3.5', '>= 3.5.3'
   gem 'whenever', require: false
+
+  gem_group :development, :test do
+    # Call 'byebug' anywhere in the code to stop execution and get a debugger console
+    gem 'rspec-rails', '~> 3.8'
+    gem 'database_cleaner'
+    gem 'factory_bot_rails'
+    gem 'ffaker'
+    gem 'simplecov', require: false
+
+  end
+  gem_group :development do
+    gem 'rails_real_favicon'
+  end
 end
 
 def set_application_name
@@ -71,6 +84,8 @@ def add_users
 
   # Create Devise User
   generate :devise, "User",
+           "username",
+           "slugs",
            "first_name",
            "last_name",
            "announcements_last_read_at:datetime",
@@ -118,6 +133,10 @@ end
 
 def add_webpack
   rails_command 'webpacker:install'
+end
+
+def add_react
+  rails_command 'webpacker:install:react'
 end
 
 def add_sidekiq
@@ -218,6 +237,47 @@ def add_sitemap
   rails_command "sitemap:install"
 end
 
+def setup_rspec
+  generate "rspec:install"
+
+  template_simplecov = """
+
+    require 'simplecov'
+
+    SimpleCov.start 'rails' do
+      add_filter '/bin/'
+      add_filter '/db/'
+      add_filter '/spec/'
+      add_filter '/config/'
+      add_filter '/vendor/'
+      add_filter '/channels/'
+      add_filter '/dashboards/'
+      add_filter '/controllers/admin/'
+    end
+    """.strip
+
+  template_database_cleaner = """
+
+
+    require 'database_cleaner'
+
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.clean # cleanup of the test
+
+
+    """.strip
+
+  insert_into_file "spec/rails_helper.rb", template_simplecov + "\n\n",
+  before: "require 'spec_helper'"
+
+  insert_into_file "spec/rails_helper.rb", template_database_cleaner,
+  after: "require 'rspec/rails'\n"
+end
+
+def generate_favicon
+  generate favicon
+end
+
 # Main setup
 add_template_repository_to_source_path
 
@@ -231,11 +291,13 @@ after_bundle do
   add_sidekiq
   add_foreman
   add_webpack
+  add_react
   add_announcements
   add_notifications
   add_multiple_authentication
   add_friendly_id
-
+  #generate_favicon
+  setup_rspec
   copy_templates
 
   # Migrate
@@ -250,7 +312,6 @@ after_bundle do
   add_whenever
 
   add_sitemap
-
 
   git :init
   git add: "."

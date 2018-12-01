@@ -20,13 +20,43 @@ You'll need the following installed to run the template successfully:
 #### Creating a new app
 
 ```bash
-rails new myapp -d postgresql -m https://raw.githubusercontent.com/excid3/jumpstart/master/template.rb
+rails new myapp -T -d postgresql -m https://raw.githubusercontent.com/huhn511/jumpstart/master/template.rb
 ```
 
 Or if you have downloaded this repo, you can reference template.rb locally:
 
 ```bash
-rails new myapp -d postgresql -m template.rb
+rails new myapp -T -d postgresql -m template.rb
+```
+
+#### Setup app
+
+### Setup user
+
+1. go to db/migrate/xxx_devise_create_users.rb
+
+remove the comment (#) from lines after Trackable, Confirmable and Lockable.
+
+2. go to config/initializers/friendly_id.rb
+
+remove the comment (#)
+```bash
+# config.treat_reserved_as_conflict = true
+```
+
+### Favicon
+
+Replace the favicon with yours in app/asstest/images and run this command:
+
+```bash
+rails generate favicon
+```
+
+
+#### Run tests
+
+```bash
+rspec
 ```
 
 #### Authenticate with social networks
